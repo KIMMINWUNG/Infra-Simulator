@@ -1,51 +1,57 @@
 // =================================================================
 // FILE: src/components/Dashboard.jsx
-// 역할: 우측의 결과 대시보드 UI (안내 문구 및 애니메이션 추가)
+// 역할: 우측의 결과 대시보드 UI (다운로드 버튼 재배치 및 문구 수정)
 // =================================================================
 import React from 'react';
 
 const cardHoverEffect = "transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl";
 
-const ScoreCard = ({ title, score, maxScore, color, details }) => {
+// 점수 카드 컴포넌트
+const ScoreCard = ({ title, score, maxScore, color, details, downloads = {}, onDownload }) => {
     const numericScore = Number(score) || 0;
     const numericMaxScore = Number(maxScore) || 0;
     const percentage = numericMaxScore > 0 ? (numericScore / numericMaxScore) * 100 : 0;
     
     return (
-        <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
-            <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
-            <div className="flex justify-between items-baseline mt-2">
-                <span className={`text-3xl font-bold`} style={{color: color}}>{numericScore.toFixed(2)}</span>
-                <span className="text-gray-500">/ {numericMaxScore}점</span>
+        <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect} flex flex-col`}>
+            {/* 상단 컨텐츠 */}
+            <div className="flex-grow">
+                <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
+                <div className="flex justify-between items-baseline mt-2">
+                    <span className={`text-3xl font-bold`} style={{color: color}}>{numericScore.toFixed(2)}</span>
+                    <span className="text-gray-500">/ {numericMaxScore}점</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3">
+                    <div className="h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${percentage}%`, backgroundColor: color }}></div>
+                </div>
+                <div className="mt-4 space-y-1 text-sm text-gray-600">
+                    {Object.entries(details).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                            <span>{key}:</span>
+                            <span className="font-semibold">{value}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3">
-                <div className="h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${percentage}%`, backgroundColor: color }}></div>
-            </div>
-            <div className="mt-4 space-y-1 text-sm text-gray-600">
-                {Object.entries(details).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                        <span>{key}:</span>
-                        <span className="font-semibold">{value}</span>
+
+            {/* 다운로드 버튼 섹션 (해당 데이터가 있을 경우에만 렌더링) */}
+            {Object.keys(downloads).length > 0 && (
+                 <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-600 mb-2">상세 데이터</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Object.entries(downloads).map(([key, data]) => (
+                             <button key={key} onClick={() => onDownload(key)} className="download-button">
+                                {key.replace(/_/g, ' ')}
+                            </button>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
 
-const DownloadCard = ({ onDownload }) => (
-    <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">상세 데이터 다운로드</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onClick={() => onDownload('실행계획_미제출')} className="download-button">실행계획 미제출</button>
-            <button onClick={() => onDownload('관리그룹_포함')} className="download-button">관리그룹 포함</button>
-            <button onClick={() => onDownload('관리그룹_제외')} className="download-button">관리그룹 제외</button>
-            <button onClick={() => onDownload('목표등급_만족')} className="download-button">목표등급 만족</button>
-            <button onClick={() => onDownload('목표등급_불만족')} className="download-button">목표등급 불만족</button>
-        </div>
-    </div>
-);
-
+// 안내 배너 컴포넌트
 const InfoBanner = () => (
     <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg" role="alert">
         <div className="flex">
@@ -62,6 +68,7 @@ const InfoBanner = () => (
     </div>
 );
 
+// 메인 대시보드 컴포넌트
 export default function Dashboard({ scores, downloadableData, onDownload }) {
     const totalScore = (Number(scores.plan.score) + Number(scores.maintain.score) + Number(scores.ordinance.score)).toFixed(2);
     
@@ -69,6 +76,18 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
         plan: '#3b82f6',
         maintain: '#22c55e',
         ordinance: '#a855f7'
+    };
+
+    // 각 지표별 다운로드 데이터를 분리
+    const planDownloads = {
+        '실행계획_미제출': downloadableData['실행계획_미제출']
+    };
+
+    const maintainDownloads = {
+        '관리그룹_포함': downloadableData['관리그룹_포함'],
+        '관리그룹_제외': downloadableData['관리그룹_제외'],
+        '목표등급_만족': downloadableData['목표등급_만족'],
+        '목표등급_불만족': downloadableData['목표등급_불만족']
     };
 
     return (
@@ -87,12 +106,31 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                <ScoreCard title="① 실행계획 제출" score={scores.plan.score} maxScore={10} color={colors.plan} details={scores.plan.details} />
-                <ScoreCard title="② 유지관리 기준" score={scores.maintain.score} maxScore={20} color={colors.maintain} details={scores.maintain.details} />
-                <ScoreCard title="③ 조례 제정" score={scores.ordinance.score} maxScore={20} color={colors.ordinance} details={scores.ordinance.details} />
-                <div className="md:col-span-2 xl:col-span-3">
-                     <DownloadCard onDownload={onDownload} />
-                </div>
+                <ScoreCard 
+                    title="① 기반시설 관리 실행계획 제출여부" 
+                    score={scores.plan.score} 
+                    maxScore={10} 
+                    color={colors.plan} 
+                    details={scores.plan.details}
+                    downloads={planDownloads}
+                    onDownload={onDownload}
+                />
+                <ScoreCard 
+                    title="② 최소유지관리기준 만족여부" 
+                    score={scores.maintain.score} 
+                    maxScore={20} 
+                    color={colors.maintain} 
+                    details={scores.maintain.details}
+                    downloads={maintainDownloads}
+                    onDownload={onDownload}
+                />
+                <ScoreCard 
+                    title="③ 성능개선 충당금 조례 제정 여부" 
+                    score={scores.ordinance.score} 
+                    maxScore={20} 
+                    color={colors.ordinance} 
+                    details={scores.ordinance.details}
+                />
             </div>
         </div>
     );
