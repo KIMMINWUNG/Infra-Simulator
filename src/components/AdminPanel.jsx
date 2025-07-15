@@ -28,7 +28,7 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
                 <header className="p-4 border-b flex justify-between items-center">
                     <h2 className="text-xl font-bold">🔐 관리자 모드</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
                 </header>
 
                 <div className="p-6 flex-grow overflow-y-auto">

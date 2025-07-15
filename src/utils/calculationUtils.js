@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/utils/calculationUtils.js
-// 역할: 모든 점수 계산 로직을 담당하는 유틸리티 파일
+// 역할: 모든 점수 계산 로직을 담당하는 유틸리티 파일 (버그 수정됨)
 // =================================================================
 import { readExcelToJson, readRawExcel } from './excelUtils';
 import { HEADER_PLAN, HEADER_DB, HEADER_ORDINANCE, GRADE_EXCLUDE, PRIVATE_OWNERS } from '../constants';
@@ -26,7 +26,7 @@ const calculatePlan = (sheet, gov, excludePrivate) => {
     const score = finalData.length > 0 ? (done.length / finalData.length) * 10 : 0;
 
     return {
-        score: score.toFixed(2),
+        score: score, // toFixed(2) 제거하여 숫자로 반환
         details: {
             "제출 대상(분모)": finalData.length,
             "제출 완료(분자)": done.length,
@@ -71,7 +71,7 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
     const score = validGrades.length > 0 ? (passed.length / validGrades.length) * 20 : 0;
 
     return {
-        score: score.toFixed(2),
+        score: score, // toFixed(2) 제거하여 숫자로 반환
         details: {
             "관리그룹 대상": included.length,
             "등급 확인(분모)": validGrades.length,
@@ -92,7 +92,7 @@ const calculateOrdinance = (sheet, gov) => {
     const score = filtered.length > 0 ? (done.length / filtered.length) * 20 : 0;
     
     return {
-        score: score.toFixed(2),
+        score: score, // toFixed(2) 제거하여 숫자로 반환
         details: {
             "대상 건수(분모)": filtered.length,
             "조례 제정(분자)": done.length,

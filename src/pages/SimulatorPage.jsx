@@ -1,11 +1,12 @@
 // =================================================================
 // FILE: src/pages/SimulatorPage.jsx
-// 역할: 시뮬레이터의 메인 페이지. 전체 레이아웃을 구성합니다.
+// 역할: 시뮬레이터의 메인 페이지. 전체 레이아웃과 모달 상태를 관리합니다.
 // =================================================================
 import React, { useState } from 'react';
 import ControlPanel from '../components/ControlPanel';
 import Dashboard from '../components/Dashboard';
 import AdminPanel from '../components/AdminPanel';
+import AdminLoginModal from '../components/AdminLoginModal'; // 관리자 로그인 모달 추가
 import Notification from '../components/Notification';
 import useSimulator from '../hooks/useSimulator';
 
@@ -16,7 +17,13 @@ export default function SimulatorPage() {
         actions
     } = useSimulator();
     
+    const [showAdminLogin, setShowAdminLogin] = useState(false);
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+
+    const handleAdminLoginSuccess = () => {
+        setShowAdminLogin(false);
+        setIsAdminPanelOpen(true);
+    };
 
     return (
         <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gray-50 text-gray-800">
@@ -27,7 +34,7 @@ export default function SimulatorPage() {
                         <p className="text-lg text-gray-500 mt-1">시설 안전관리 수준 강화 지표 점수 자동화</p>
                     </div>
                     <button
-                        onClick={() => setIsAdminPanelOpen(true)}
+                        onClick={() => setShowAdminLogin(true)} // 관리자 로그인 모달을 열도록 변경
                         className="px-4 py-2 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300"
                     >
                         🔐 관리자 모드
@@ -56,6 +63,14 @@ export default function SimulatorPage() {
                     </div>
                 </div>
             </div>
+
+            {showAdminLogin && (
+                <AdminLoginModal
+                    onSuccess={handleAdminLoginSuccess}
+                    onCancel={() => setShowAdminLogin(false)}
+                    setNotification={actions.showNotification}
+                />
+            )}
 
             {isAdminPanelOpen && (
                 <AdminPanel
