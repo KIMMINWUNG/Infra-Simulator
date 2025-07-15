@@ -5,15 +5,17 @@
 import React from 'react';
 
 const ScoreCard = ({ title, score, maxScore, color, details }) => {
-    // 점수와 최대 점수를 항상 숫자로 변환하여 계산의 안정성을 높입니다.
-    const percentage = Number(maxScore) > 0 ? (Number(score) / Number(maxScore)) * 100 : 0;
+    // score와 maxScore를 숫자로 변환하여 계산의 안정성을 높입니다.
+    const numericScore = Number(score) || 0;
+    const numericMaxScore = Number(maxScore) || 0;
+    const percentage = numericMaxScore > 0 ? (numericScore / numericMaxScore) * 100 : 0;
     
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
             <div className="flex justify-between items-baseline mt-2">
-                <span className={`text-3xl font-bold ${color}`}>{Number(score).toFixed(2)}</span>
-                <span className="text-gray-500">/ {maxScore}점</span>
+                <span className={`text-3xl font-bold ${color}`}>{numericScore.toFixed(2)}</span>
+                <span className="text-gray-500">/ {numericMaxScore}점</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3">
                 <div className={`${color.replace('text-', 'bg-')} h-2.5 rounded-full`} style={{ width: `${percentage}%` }}></div>

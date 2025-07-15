@@ -26,7 +26,7 @@ const calculatePlan = (sheet, gov, excludePrivate) => {
     const score = finalData.length > 0 ? (done.length / finalData.length) * 10 : 0;
 
     return {
-        score: score, // toFixed(2) 제거하여 숫자로 반환
+        score: score, // 점수를 숫자로 반환
         details: {
             "제출 대상(분모)": finalData.length,
             "제출 완료(분자)": done.length,
@@ -47,7 +47,7 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
     const groupKeys = new Set(), gradeKeys = new Set();
     const groupCols = ["C", "D", "E", "F", "G"], gradeCols = ["H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"];
 
-    for (let i = 2; i < 300; i++) { // 행 범위를 넉넉하게
+    for (let i = 2; i < 300; i++) {
         const infra = sheet[`A${i}`]?.v?.trim(), fac = sheet[`B${i}`]?.v?.trim();
         if (!infra || !fac) continue;
         
@@ -71,7 +71,7 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
     const score = validGrades.length > 0 ? (passed.length / validGrades.length) * 20 : 0;
 
     return {
-        score: score, // toFixed(2) 제거하여 숫자로 반환
+        score: score, // 점수를 숫자로 반환
         details: {
             "관리그룹 대상": included.length,
             "등급 확인(분모)": validGrades.length,
@@ -92,7 +92,7 @@ const calculateOrdinance = (sheet, gov) => {
     const score = filtered.length > 0 ? (done.length / filtered.length) * 20 : 0;
     
     return {
-        score: score, // toFixed(2) 제거하여 숫자로 반환
+        score: score, // 점수를 숫자로 반환
         details: {
             "대상 건수(분모)": filtered.length,
             "조례 제정(분자)": done.length,
