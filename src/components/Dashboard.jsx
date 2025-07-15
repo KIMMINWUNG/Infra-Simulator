@@ -1,24 +1,40 @@
 // =================================================================
 // FILE: src/components/Dashboard.jsx
-// 역할: 우측의 결과 대시보드 UI (버그 수정됨)
+// 역할: 우측의 결과 대시보드 UI (프로그레스 바 버그 수정)
 // =================================================================
 import React from 'react';
 
 const ScoreCard = ({ title, score, maxScore, color, details }) => {
-    // score와 maxScore를 숫자로 변환하여 계산의 안정성을 높입니다.
     const numericScore = Number(score) || 0;
     const numericMaxScore = Number(maxScore) || 0;
     const percentage = numericMaxScore > 0 ? (numericScore / numericMaxScore) * 100 : 0;
     
+    // Tailwind 클래스 대신 직접 스타일을 적용하여 렌더링 문제를 해결합니다.
+    const progressBarStyle = {
+        width: '100%',
+        backgroundColor: '#e5e7eb', // bg-gray-200
+        borderRadius: '9999px',
+        height: '10px',
+        marginTop: '12px'
+    };
+
+    const innerBarStyle = {
+        width: `${percentage}%`,
+        backgroundColor: color, // 'text-purple-500' 대신 실제 색상 코드를 사용하도록 수정
+        borderRadius: '9999px',
+        height: '10px',
+        transition: 'width 0.5s ease-in-out' // 부드러운 애니메이션 효과 추가
+    };
+
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
             <div className="flex justify-between items-baseline mt-2">
-                <span className={`text-3xl font-bold ${color}`}>{numericScore.toFixed(2)}</span>
+                <span className={`text-3xl font-bold`} style={{ color: color }}>{numericScore.toFixed(2)}</span>
                 <span className="text-gray-500">/ {numericMaxScore}점</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3">
-                <div className={`${color.replace('text-', 'bg-')} h-2.5 rounded-full`} style={{ width: `${percentage}%` }}></div>
+            <div style={progressBarStyle}>
+                <div style={innerBarStyle}></div>
             </div>
             <div className="mt-4 space-y-1 text-sm text-gray-600">
                 {Object.entries(details).map(([key, value]) => (
@@ -48,6 +64,13 @@ const DownloadCard = ({ onDownload }) => (
 export default function Dashboard({ scores, downloadableData, onDownload }) {
     const totalScore = (Number(scores.plan.score) + Number(scores.maintain.score) + Number(scores.ordinance.score)).toFixed(2);
     
+    // 각 점수 카드에 전달할 색상 값을 직접 지정합니다.
+    const colors = {
+        plan: '#3b82f6', // text-blue-500
+        maintain: '#22c55e', // text-green-500
+        ordinance: '#a855f7' // text-purple-500
+    };
+
     return (
         <div className="space-y-8">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg flex flex-col sm:flex-row items-center justify-between">
@@ -62,9 +85,9 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                <ScoreCard title="① 실행계획 제출" score={scores.plan.score} maxScore={10} color="text-blue-500" details={scores.plan.details} />
-                <ScoreCard title="② 유지관리 기준" score={scores.maintain.score} maxScore={20} color="text-green-500" details={scores.maintain.details} />
-                <ScoreCard title="③ 조례 제정" score={scores.ordinance.score} maxScore={20} color="text-purple-500" details={scores.ordinance.details} />
+                <ScoreCard title="① 실행계획 제출" score={scores.plan.score} maxScore={10} color={colors.plan} details={scores.plan.details} />
+                <ScoreCard title="② 유지관리 기준" score={scores.maintain.score} maxScore={20} color={colors.maintain} details={scores.maintain.details} />
+                <ScoreCard title="③ 조례 제정" score={scores.ordinance.score} maxScore={20} color={colors.ordinance} details={scores.ordinance.details} />
                 <div className="md:col-span-2 xl:col-span-3">
                      <DownloadCard onDownload={onDownload} />
                 </div>
