@@ -1,10 +1,13 @@
 // =================================================================
 // FILE: src/components/ControlPanel.jsx
-// 역할: 좌측의 설정 및 파일 업로드 UI (안내 문구 제거됨)
+// 역할: 좌측의 설정 및 파일 업로드 UI (애니메이션 추가됨)
 // =================================================================
 import React from 'react';
 import { LOCAL_GOV_LIST } from '../constants';
 import FileUpload from './FileUpload';
+
+// 모든 카드에 일관된 호버 애니메이션 효과를 적용하기 위한 변수
+const cardHoverEffect = "transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl";
 
 export default function ControlPanel({
     selectedGov,
@@ -19,7 +22,7 @@ export default function ControlPanel({
     return (
         <div className="space-y-8">
             {/* Settings Card */}
-            <div className="bg-white p-6 rounded-xl shadow-md transition-shadow duration-300 hover:shadow-lg">
+            <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">⚙️ 기본 설정</h2>
                 <div className="space-y-4">
                     <div>
@@ -55,7 +58,7 @@ export default function ControlPanel({
             </div>
 
             {/* File Upload Card */}
-            <div className="bg-white p-6 rounded-xl shadow-md transition-shadow duration-300 hover:shadow-lg">
+            <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">📁 파일 업로드</h2>
                 <div className="space-y-4">
                     <FileUpload id="planFile" label="실행계획 파일" file={files.planFile} onFileChange={(file) => onFileChange('planFile', file)} />
