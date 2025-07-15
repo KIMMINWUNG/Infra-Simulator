@@ -1,11 +1,13 @@
 // =================================================================
 // FILE: src/components/Dashboard.jsx
-// 역할: 우측의 결과 대시보드 UI
+// 역할: 우측의 결과 대시보드 UI (버그 수정됨)
 // =================================================================
 import React from 'react';
 
 const ScoreCard = ({ title, score, maxScore, color, details }) => {
-    const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+    // 점수와 최대 점수를 항상 숫자로 변환하여 계산의 안정성을 높입니다.
+    const percentage = Number(maxScore) > 0 ? (Number(score) / Number(maxScore)) * 100 : 0;
+    
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
