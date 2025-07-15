@@ -1,51 +1,25 @@
 // =================================================================
 // FILE: src/components/Dashboard.jsx
-// 역할: 우측의 결과 대시보드 UI (애니메이션 추가)
+// 역할: 우측의 결과 대시보드 UI (안내 문구 및 애니메이션 추가)
 // =================================================================
 import React from 'react';
-import { motion } from 'framer-motion';
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: {
-      duration: 0.5
-    }
-  }
-};
+const cardHoverEffect = "transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl";
 
 const ScoreCard = ({ title, score, maxScore, color, details }) => {
     const numericScore = Number(score) || 0;
     const numericMaxScore = Number(maxScore) || 0;
     const percentage = numericMaxScore > 0 ? (numericScore / numericMaxScore) * 100 : 0;
     
-    const progressBarStyle = {
-        width: '100%',
-        backgroundColor: '#e5e7eb', // bg-gray-200
-        borderRadius: '9999px',
-        height: '10px',
-        marginTop: '12px'
-    };
-
-    const innerBarStyle = {
-        width: `${percentage}%`,
-        backgroundColor: color, 
-        borderRadius: '9999px',
-        height: '10px',
-        transition: 'width 0.5s ease-in-out'
-    };
-
     return (
-        <motion.div variants={cardVariants} className="bg-white p-6 rounded-xl shadow-md">
+        <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
             <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
             <div className="flex justify-between items-baseline mt-2">
-                <span className={`text-3xl font-bold`} style={{ color: color }}>{numericScore.toFixed(2)}</span>
+                <span className={`text-3xl font-bold`} style={{color: color}}>{numericScore.toFixed(2)}</span>
                 <span className="text-gray-500">/ {numericMaxScore}점</span>
             </div>
-            <div style={progressBarStyle}>
-                <div style={innerBarStyle}></div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3">
+                <div className="h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${percentage}%`, backgroundColor: color }}></div>
             </div>
             <div className="mt-4 space-y-1 text-sm text-gray-600">
                 {Object.entries(details).map(([key, value]) => (
@@ -55,12 +29,12 @@ const ScoreCard = ({ title, score, maxScore, color, details }) => {
                     </div>
                 ))}
             </div>
-        </motion.div>
+        </div>
     );
 };
 
 const DownloadCard = ({ onDownload }) => (
-    <motion.div variants={cardVariants} className="bg-white p-6 rounded-xl shadow-md">
+    <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
         <h3 className="text-lg font-semibold text-gray-700 mb-4">상세 데이터 다운로드</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button onClick={() => onDownload('실행계획_미제출')} className="download-button">실행계획 미제출</button>
@@ -69,28 +43,39 @@ const DownloadCard = ({ onDownload }) => (
             <button onClick={() => onDownload('목표등급_만족')} className="download-button">목표등급 만족</button>
             <button onClick={() => onDownload('목표등급_불만족')} className="download-button">목표등급 불만족</button>
         </div>
-    </motion.div>
+    </div>
+);
+
+const InfoBanner = () => (
+    <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg" role="alert">
+        <div className="flex">
+            <div className="py-1">
+                <svg className="h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+            </div>
+            <div>
+                <p className="font-bold">안내사항</p>
+                <p className="text-sm">업로드된 파일은 서버에 저장되지 않으며, 모든 데이터 처리는 사용자의 브라우저 내에서만 안전하게 이루어집니다.</p>
+            </div>
+        </div>
+    </div>
 );
 
 export default function Dashboard({ scores, downloadableData, onDownload }) {
     const totalScore = (Number(scores.plan.score) + Number(scores.maintain.score) + Number(scores.ordinance.score)).toFixed(2);
     
     const colors = {
-        plan: '#3b82f6', // text-blue-500
-        maintain: '#22c55e', // text-green-500
-        ordinance: '#a855f7' // text-purple-500
+        plan: '#3b82f6',
+        maintain: '#22c55e',
+        ordinance: '#a855f7'
     };
 
     return (
-        <motion.div 
-          className="space-y-8"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: { transition: { staggerChildren: 0.1 } }
-          }}
-        >
-            <motion.div variants={cardVariants} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg flex flex-col sm:flex-row items-center justify-between">
+        <div className="space-y-8">
+            <InfoBanner />
+
+            <div className={`bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg flex flex-col sm:flex-row items-center justify-between ${cardHoverEffect}`}>
                 <div>
                     <h2 className="text-xl font-semibold">종합 점수</h2>
                     <p className="text-blue-200">모든 항목의 점수를 합산한 결과입니다.</p>
@@ -99,7 +84,7 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
                     <p className="text-5xl font-bold">{totalScore}</p>
                     <p className="text-blue-100">/ 50점 만점</p>
                 </div>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 <ScoreCard title="① 실행계획 제출" score={scores.plan.score} maxScore={10} color={colors.plan} details={scores.plan.details} />
@@ -109,6 +94,6 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
                      <DownloadCard onDownload={onDownload} />
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

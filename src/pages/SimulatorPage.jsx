@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import ControlPanel from '../components/ControlPanel';
 import Dashboard from '../components/Dashboard';
 import AdminPanel from '../components/AdminPanel';
-import AdminLoginModal from '../components/AdminLoginModal'; // 관리자 로그인 모달 추가
+import AdminLoginModal from '../components/AdminLoginModal';
 import Notification from '../components/Notification';
 import useSimulator from '../hooks/useSimulator';
 
@@ -34,7 +34,7 @@ export default function SimulatorPage() {
                         <p className="text-lg text-gray-500 mt-1">시설 안전관리 수준 강화 지표 점수 자동화</p>
                     </div>
                     <button
-                        onClick={() => setShowAdminLogin(true)} // 관리자 로그인 모달을 열도록 변경
+                        onClick={() => setShowAdminLogin(true)}
                         className="px-4 py-2 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300"
                     >
                         🔐 관리자 모드

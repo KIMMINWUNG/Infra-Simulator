@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/hooks/useSimulator.js
-// 역할: 시뮬레이터의 모든 상태와 로직을 관리하는 커스텀 훅 (가장 핵심적인 파일)
+// 역할: 시뮬레이터의 모든 상태와 로직을 관리하는 커스텀 훅
 // =================================================================
 import { useState } from 'react';
 import { calculateScores } from '../utils/calculationUtils';
@@ -29,7 +29,6 @@ export default function useSimulator() {
     const [notification, setNotification] = useState(null);
     const [downloadableData, setDownloadableData] = useState({});
     
-    // For Admin Panel
     const [isBulkLoading, setIsBulkLoading] = useState(false);
     const [bulkResults, setBulkResults] = useState([]);
 
@@ -68,7 +67,7 @@ export default function useSimulator() {
         } catch (error) {
             console.error("Calculation Error:", error);
             showNotification(`오류 발생: ${error.message}`, 'error');
-            setScores(initialScores); // 오류 발생 시 점수 초기화
+            setScores(initialScores);
         } finally {
             setIsLoading(false);
         }
@@ -87,18 +86,18 @@ export default function useSimulator() {
         const results = [];
         for (const gov of LOCAL_GOV_LIST) {
             try {
-                const plan = await calculateScores('plan', { planFile: adminFiles.planFile }, gov, true); // 관리자 모드는 항상 민자 제외
+                const plan = await calculateScores('plan', { planFile: adminFiles.planFile }, gov, true);
                 const maintain = await calculateScores('maintain', { noticeFile: adminFiles.noticeFile, dbFile: adminFiles.dbFile }, gov, true);
                 const ordinance = await calculateScores('ordinance', { ordinanceFile: adminFiles.ordinanceFile }, gov, true);
                 
                 results.push({
                     지자체: gov,
-                    실행계획: plan.score,
-                    유지관리기준: maintain.score,
-                    조례제정: ordinance.score,
+                    실행계획: plan.score.toFixed(2),
+                    유지관리기준: maintain.score.toFixed(2),
+                    조례제정: ordinance.score.toFixed(2),
                     총점: (Number(plan.score) + Number(maintain.score) + Number(ordinance.score)).toFixed(2)
                 });
-                setBulkResults([...results]); // 진행상황 실시간 업데이트
+                setBulkResults([...results]);
             } catch (error) {
                 console.warn(`[${gov}] 점수 계산 실패: ${error.message}`);
             }
@@ -117,28 +116,8 @@ export default function useSimulator() {
     };
 
     return {
-        state: {
-            selectedGov,
-            excludePrivate,
-            files,
-            scores,
-            isLoading,
-            notification,
-            downloadableData,
-            isBulkLoading,
-            bulkResults,
-        },
-        setters: {
-            setSelectedGov,
-            setExcludePrivate,
-            setFile,
-        },
-        actions: {
-            runSingleSimulation,
-            runBulkSimulation,
-            downloadDetailedData,
-            clearNotification,
-            showNotification
-        }
+        state: { selectedGov, excludePrivate, files, scores, isLoading, notification, downloadableData, isBulkLoading, bulkResults },
+        setters: { setSelectedGov, setExcludePrivate, setFile },
+        actions: { runSingleSimulation, runBulkSimulation, downloadDetailedData, clearNotification, showNotification }
     };
 }
