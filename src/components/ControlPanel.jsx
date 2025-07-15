@@ -1,10 +1,22 @@
 // =================================================================
 // FILE: src/components/ControlPanel.jsx
-// 역할: 좌측의 설정 및 파일 업로드 UI
+// 역할: 좌측의 설정 및 파일 업로드 UI (애니메이션 추가)
 // =================================================================
 import React from 'react';
+import { motion } from 'framer-motion';
 import { LOCAL_GOV_LIST } from '../constants';
 import FileUpload from './FileUpload';
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5
+    }
+  }
+};
 
 export default function ControlPanel({
     selectedGov,
@@ -17,9 +29,16 @@ export default function ControlPanel({
     onRunSimulation
 }) {
     return (
-        <div className="space-y-8">
+        <motion.div 
+          className="space-y-8"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { transition: { staggerChildren: 0.1 } }
+          }}
+        >
             {/* Info Banner */}
-            <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg" role="alert">
+            <motion.div variants={cardVariants} className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg" role="alert">
                 <div className="flex">
                     <div className="py-1">
                         <svg className="fill-current h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 11v4h2v-4H9zm0-4h2v2H9V7z"/></svg>
@@ -29,10 +48,10 @@ export default function ControlPanel({
                         <p className="text-sm">업로드된 파일은 서버에 저장되지 않으며, 모든 데이터 처리는 사용자의 브라우저 내에서만 안전하게 이루어집니다.</p>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Settings Card */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <motion.div variants={cardVariants} className="bg-white p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">⚙️ 기본 설정</h2>
                 <div className="space-y-4">
                     <div>
@@ -65,10 +84,10 @@ export default function ControlPanel({
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* File Upload Card */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <motion.div variants={cardVariants} className="bg-white p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">📁 파일 업로드</h2>
                 <div className="space-y-4">
                     <FileUpload
@@ -96,24 +115,26 @@ export default function ControlPanel({
                         onFileChange={(file) => onFileChange('ordinanceFile', file)}
                     />
                 </div>
-            </div>
+            </motion.div>
 
             {/* Action Button */}
-            <button
-                onClick={onRunSimulation}
-                disabled={isLoading}
-                className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-                {isLoading ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                ) : (
-                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                )}
-                <span>{isLoading ? '분석 중...' : '시뮬레이션 시작'}</span>
-            </button>
-        </div>
+            <motion.div variants={cardVariants}>
+              <button
+                  onClick={onRunSimulation}
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                  {isLoading ? (
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                  ) : (
+                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  )}
+                  <span>{isLoading ? '분석 중...' : '시뮬레이션 시작'}</span>
+              </button>
+            </motion.div>
+        </motion.div>
     );
 }
