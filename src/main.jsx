@@ -1,10 +1,14 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
+// =================================================================
+// FILE: src/main.jsx
+// 역할: React 앱의 진입점입니다. (이 파일은 이미 존재하니 수정할 필요 없습니다)
+// =================================================================
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+import './index.css' // Tailwind CSS를 불러옵니다.
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <App />
-  </StrictMode>,
+  </React.StrictMode>,
 )
