@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/utils/excelUtils.js
-// 역할: 엑셀 파일 읽기/쓰기 관련 유틸리티 함수
+// 역할: 엑셀 파일 읽기/쓰기 관련 유틸리티 함수 (다중 시트 내보내기 기능 추가)
 // =================================================================
 import * as XLSX from 'xlsx';
 
@@ -57,5 +57,18 @@ export const exportToExcel = (data, filename) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "결과");
+    XLSX.writeFile(wb, filename);
+};
+
+export const exportMultiSheetExcel = (dataByGov, filename) => {
+    const wb = XLSX.utils.book_new();
+    Object.keys(dataByGov).forEach(gov => {
+        const data = dataByGov[gov];
+        if (data && data.length > 0) {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const sheetName = gov.substring(0, 31); // 시트 이름은 31자를 넘을 수 없음
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        }
+    });
     XLSX.writeFile(wb, filename);
 };

@@ -1,12 +1,12 @@
 // =================================================================
 // FILE: src/components/AdminPanel.jsx
-// 역할: 관리자 모드용 패널 (일괄 계산 진행 메시지 추가)
+// 역할: 관리자 모드용 패널 (상세 데이터 다운로드 버튼 추가)
 // =================================================================
 import React, { useState } from 'react';
 import FileUpload from './FileUpload';
 import { exportToExcel } from '../utils/excelUtils';
 
-export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkLoading, bulkLoadingMessage }) {
+export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkLoading, bulkLoadingMessage, onDownloadBulkData }) {
     const [adminFiles, setAdminFiles] = useState({
         planFile: null,
         noticeFile: null,
@@ -25,22 +25,22 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
                 <header className="p-4 border-b flex justify-between items-center">
                     <h2 className="text-xl font-bold">🔐 관리자 모드</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
                 </header>
 
                 <div className="p-6 flex-grow overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-4 md:col-span-1">
                             <h3 className="font-semibold">일괄 계산용 파일 업로드</h3>
                             <FileUpload id="admin-plan" label="실행계획 파일" file={adminFiles.planFile} onFileChange={(f) => handleFileChange('planFile', f)} />
                             <FileUpload id="admin-notice" label="고시문 파일" file={adminFiles.noticeFile} onFileChange={(f) => handleFileChange('noticeFile', f)} />
                             <FileUpload id="admin-db" label="실적DB 파일" file={adminFiles.dbFile} onFileChange={(f) => handleFileChange('dbFile', f)} />
                             <FileUpload id="admin-ord" label="조례 파일" file={adminFiles.ordinanceFile} onFileChange={(f) => handleFileChange('ordinanceFile', f)} />
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col md:col-span-2">
                              <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-semibold">일괄 계산 결과</h3>
                                 {isBulkLoading && <span className="text-sm text-blue-600 font-semibold">{bulkLoadingMessage}</span>}
@@ -70,6 +70,16 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
                                     </tbody>
                                 </table>
                              </div>
+                        </div>
+                    </div>
+                     <div className="mt-6 pt-6 border-t">
+                        <h3 className="font-semibold mb-2">상세 DB 다운로드 (전체 지자체)</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            <button onClick={() => onDownloadBulkData('실행계획_미제출')} disabled={isBulkLoading || !bulkResults.length} className="download-button-admin">실행계획 미제출 DB</button>
+                            <button onClick={() => onDownloadBulkData('관리그룹_포함')} disabled={isBulkLoading || !bulkResults.length} className="download-button-admin">관리그룹 포함 DB</button>
+                            <button onClick={() => onDownloadBulkData('관리그룹_제외')} disabled={isBulkLoading || !bulkResults.length} className="download-button-admin">관리그룹 제외 DB</button>
+                            <button onClick={() => onDownloadBulkData('목표등급_만족')} disabled={isBulkLoading || !bulkResults.length} className="download-button-admin">목표등급 만족 DB</button>
+                            <button onClick={() => onDownloadBulkData('목표등급_불만족')} disabled={isBulkLoading || !bulkResults.length} className="download-button-admin">목표등급 불만족 DB</button>
                         </div>
                     </div>
                 </div>

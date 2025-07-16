@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/pages/SimulatorPage.jsx
-// 역할: 시뮬레이터의 메인 페이지. (로딩 메시지 전달하도록 수정)
+// 역할: 시뮬레이터의 메인 페이지. (AdminPanel에 prop 전달)
 // =================================================================
 import React, { useState } from 'react';
 import ControlPanel from '../components/ControlPanel';
@@ -82,6 +82,8 @@ export default function SimulatorPage() {
                     onRunBulkSim={actions.runBulkSimulation}
                     bulkResults={state.bulkResults}
                     isBulkLoading={state.isBulkLoading}
+                    bulkLoadingMessage={state.bulkLoadingMessage}
+                    onDownloadBulkData={actions.downloadBulkDetailedData}
                 />
             )}
             

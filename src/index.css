@@ -1,3 +1,7 @@
+// =================================================================
+// FILE: src/index.css
+// 역할: Tailwind CSS를 불러오는 파일 (관리자용 다운로드 버튼 스타일 추가)
+// =================================================================
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,5 +9,8 @@
 @layer components {
   .download-button {
     @apply w-full text-left p-3 bg-gray-100 rounded-lg hover:bg-blue-100 hover:text-blue-700 font-semibold text-sm transition-colors;
+  }
+  .download-button-admin {
+    @apply w-full text-center p-2 bg-gray-100 rounded-lg hover:bg-indigo-100 hover:text-indigo-700 font-medium text-sm transition-colors disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed;
   }
 }

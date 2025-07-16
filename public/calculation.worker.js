@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: public/calculation.worker.js
-// 역할: 모든 무거운 계산을 백그라운드에서 전담 (일괄 계산 로직 추가)
+// 역할: 모든 무거운 계산을 백그라운드에서 전담 (일괄 계산 상세 데이터 수집 로직 추가)
 // =================================================================
 self.importScripts('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
 
@@ -132,7 +132,6 @@ const calculateOrdinance = (sheet, gov) => {
 self.onmessage = async (e) => {
     const { task, files, gov, excludePrivate, constants } = e.data;
     
-    // 단일 시뮬레이션 작업
     if (task === 'single') {
         try {
             self.postMessage({ type: 'progress', message: '실행계획 파일 읽는 중...' });
@@ -156,11 +155,7 @@ self.onmessage = async (e) => {
 
             self.postMessage({ 
                 type: 'done', 
-                results: {
-                    plan: planResult,
-                    maintain: maintainResult,
-                    ordinance: ordinanceResult
-                }
+                results: { plan: planResult, maintain: maintainResult, ordinance: ordinanceResult }
             });
 
         } catch (error) {
@@ -168,7 +163,6 @@ self.onmessage = async (e) => {
         }
     }
     
-    // 일괄 계산 작업
     if (task === 'bulk') {
         try {
             self.postMessage({ type: 'bulk_progress', message: '일괄 계산용 파일 읽는 중...' });
@@ -177,6 +171,11 @@ self.onmessage = async (e) => {
             const dbSheet = await readExcelToJson(files.dbFile, constants.HEADER_DB);
             const ordinanceSheet = await readExcelToJson(files.ordinanceFile, constants.HEADER_ORDINANCE);
             
+            const allDetailedData = {
+                '실행계획_미제출': {}, '관리그룹_포함': {}, '관리그룹_제외': {},
+                '목표등급_만족': {}, '목표등급_불만족': {}
+            };
+
             for (let i = 0; i < constants.LOCAL_GOV_LIST.length; i++) {
                 const currentGov = constants.LOCAL_GOV_LIST[i];
                 self.postMessage({ type: 'bulk_progress', message: `[${i+1}/${constants.LOCAL_GOV_LIST.length}] ${currentGov} 계산 중...` });
@@ -196,11 +195,18 @@ self.onmessage = async (e) => {
                     };
                     self.postMessage({ type: 'bulk_result_partial', result: newResult });
 
+                    // 상세 데이터 수집
+                    allDetailedData['실행계획_미제출'][currentGov] = planResult.downloadableData['실행계획_미제출'];
+                    allDetailedData['관리그룹_포함'][currentGov] = maintainResult.downloadableData['관리그룹_포함'];
+                    allDetailedData['관리그룹_제외'][currentGov] = maintainResult.downloadableData['관리그룹_제외'];
+                    allDetailedData['목표등급_만족'][currentGov] = maintainResult.downloadableData['목표등급_만족'];
+                    allDetailedData['목표등급_불만족'][currentGov] = maintainResult.downloadableData['목표등급_불만족'];
+
                 } catch (govError) {
                      console.warn(`[${currentGov}] 점수 계산 실패: ${govError.message}`);
                 }
             }
-            self.postMessage({ type: 'bulk_done' });
+            self.postMessage({ type: 'bulk_done', detailedData: allDetailedData });
 
         } catch (error) {
             self.postMessage({ type: 'error', message: error.message });
