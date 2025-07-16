@@ -1,32 +1,45 @@
 // =================================================================
 // FILE: src/utils/calculationUtils.js
-// 역할: 모든 점수 계산 로직을 담당하는 유틸리티 파일
+// 역할: 모든 점수 계산 로직을 담당하는 유틸리티 파일 (대용량 파일 처리 성능 개선)
 // =================================================================
 import { readExcelToJson, readRawExcel } from './excelUtils';
 import { HEADER_PLAN, HEADER_DB, HEADER_ORDINANCE, GRADE_EXCLUDE, PRIVATE_OWNERS } from '../constants';
 import * as XLSX from 'xlsx';
 
+// 브라우저가 멈추지 않도록 잠시 쉴 틈을 주는 함수
 const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
 
+// 배열 데이터를 작은 덩어리(청크)로 나누어 처리하여 브라우저 멈춤 현상을 방지하는 함수
 const processInChunks = async (array, processFn, chunkSize = 1000, setLoadingMessage, message) => {
     let results = [];
+    if (setLoadingMessage && message) {
+        setLoadingMessage(`${message} (0/${array.length})`);
+        await yieldToMain();
+    }
+
     for (let i = 0; i < array.length; i += chunkSize) {
         const chunk = array.slice(i, i + chunkSize);
         const processedChunk = chunk.filter(processFn);
         results = results.concat(processedChunk);
-        if (setLoadingMessage) {
+        
+        if (setLoadingMessage && message) {
             setLoadingMessage(`${message} (${i + chunk.length}/${array.length})`);
         }
-        await yieldToMain();
+        await yieldToMain(); // 여기서 브라우저가 다른 일을 할 수 있도록 제어권을 넘김
     }
     return results;
 };
 
-const calculatePlan = (sheet, gov, excludePrivate) => {
-    const filtered = sheet.filter(r => r["관리계획 수립기관"]?.trim() === gov);
-    const finalData = excludePrivate ? filtered.filter(r => !PRIVATE_OWNERS.includes(r["작성기관"]?.trim())) : filtered;
+// --- 각 지표별 계산 로직 (모두 비동기 함수로 변경) ---
+
+const calculatePlan = async (sheet, gov, excludePrivate, setLoadingMessage) => {
+    const filteredByGov = await processInChunks(sheet, r => r["관리계획 수립기관"]?.trim() === gov, 2000, setLoadingMessage, '지자체 필터링 중...');
     
-    const done = finalData.filter(r => {
+    const finalData = excludePrivate 
+        ? await processInChunks(filteredByGov, r => !PRIVATE_OWNERS.includes(r["작성기관"]?.trim()), 2000, setLoadingMessage, '민자사업자 제외 중...')
+        : filteredByGov;
+    
+    const done = await processInChunks(finalData, r => {
         const dateValue = r["결재이력"];
         if (typeof dateValue === 'number') {
             const date = XLSX.SSF.parse_date_code(dateValue);
@@ -34,7 +47,7 @@ const calculatePlan = (sheet, gov, excludePrivate) => {
         }
         const date = new Date(dateValue);
         return !isNaN(date) && date <= new Date("2025-02-28T23:59:59");
-    });
+    }, 2000, setLoadingMessage, '제출 기한 확인 중...');
     
     const missed = finalData.filter(r => !done.includes(r));
     const score = finalData.length > 0 ? (done.length / finalData.length) * 10 : 0;
@@ -91,9 +104,10 @@ const calculateMaintain = async (noticeWB, dbSheet, gov, excludePrivate, setLoad
     };
 };
 
-const calculateOrdinance = (sheet, gov) => {
-    const filtered = sheet.filter(r => r["관리계획 수립기관"]?.trim() === gov);
-    const done = filtered.filter(r => r["충당금 조례 제정 여부"]?.toString().trim() === "O");
+const calculateOrdinance = async (sheet, gov, setLoadingMessage) => {
+    const filtered = await processInChunks(sheet, r => r["관리계획 수립기관"]?.trim() === gov, 2000, setLoadingMessage, '지자체 필터링 중...');
+    const done = await processInChunks(filtered, r => r["충당금 조례 제정 여부"]?.toString().trim() === "O", 2000, setLoadingMessage, '조례 제정 여부 확인 중...');
+    
     const score = filtered.length > 0 ? (done.length / filtered.length) * 20 : 0;
     
     return {
@@ -104,21 +118,30 @@ const calculateOrdinance = (sheet, gov) => {
 };
 
 export const calculateScores = async (type, files, gov, excludePrivate, setLoadingMessage) => {
+    // 각 단계 시작 전에 로딩 메시지를 설정하고, 브라우저가 메시지를 렌더링할 시간을 줍니다.
     switch (type) {
         case 'plan': {
-            if (setLoadingMessage) setLoadingMessage('실행계획 평가 중...');
+            if (setLoadingMessage) setLoadingMessage('실행계획 파일 읽는 중...');
+            await yieldToMain();
             const sheet = await readExcelToJson(files.planFile, HEADER_PLAN);
-            return calculatePlan(sheet, gov, excludePrivate);
+            return await calculatePlan(sheet, gov, excludePrivate, setLoadingMessage);
         }
         case 'maintain': {
+            if (setLoadingMessage) setLoadingMessage('고시문 파일 읽는 중...');
+            await yieldToMain();
             const noticeWB = await readRawExcel(files.noticeFile);
+
+            if (setLoadingMessage) setLoadingMessage('실적DB 파일 읽는 중...');
+            await yieldToMain();
             const dbSheet = await readExcelToJson(files.dbFile, HEADER_DB);
+            
             return await calculateMaintain(noticeWB, dbSheet, gov, excludePrivate, setLoadingMessage);
         }
         case 'ordinance': {
-            if (setLoadingMessage) setLoadingMessage('조례 제정 평가 중...');
+            if (setLoadingMessage) setLoadingMessage('조례 파일 읽는 중...');
+            await yieldToMain();
             const sheet = await readExcelToJson(files.ordinanceFile, HEADER_ORDINANCE);
-            return calculateOrdinance(sheet, gov);
+            return await calculateOrdinance(sheet, gov, setLoadingMessage);
         }
         default:
             throw new Error("알 수 없는 계산 유형입니다.");
