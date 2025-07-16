@@ -1,9 +1,9 @@
 // =================================================================
 // FILE: src/hooks/useSimulator.js
-// 역할: 시뮬레이터의 모든 상태와 로직을 관리 (일괄 계산 로직 구현)
+// 역할: 시뮬레이터의 모든 상태와 로직을 관리 (일괄 다운로드 로직 수정)
 // =================================================================
 import { useState, useEffect, useRef } from 'react';
-import { exportToExcel } from '../utils/excelUtils';
+import { exportToExcel, exportMultiSheetExcel } from '../utils/excelUtils';
 import * as constants from '../constants';
 
 const initialScores = {
@@ -32,6 +32,7 @@ export default function useSimulator() {
     const [isBulkLoading, setIsBulkLoading] = useState(false);
     const [bulkLoadingMessage, setBulkLoadingMessage] = useState('');
     const [bulkResults, setBulkResults] = useState([]);
+    const [bulkDownloadableData, setBulkDownloadableData] = useState(null);
     
     const workerRef = useRef(null);
 
@@ -39,7 +40,7 @@ export default function useSimulator() {
         workerRef.current = new Worker('/calculation.worker.js');
 
         workerRef.current.onmessage = (e) => {
-            const { type, message, results, result } = e.data;
+            const { type, message, results, result, detailedData } = e.data;
             switch (type) {
                 case 'progress':
                     setLoadingMessage(message);
@@ -59,6 +60,7 @@ export default function useSimulator() {
                     break;
                 case 'bulk_done':
                     setBulkLoadingMessage('일괄 계산 완료!');
+                    setBulkDownloadableData(detailedData);
                     setIsBulkLoading(false);
                     break;
                 case 'error':
@@ -119,6 +121,7 @@ export default function useSimulator() {
         
         setIsBulkLoading(true);
         setBulkResults([]);
+        setBulkDownloadableData(null);
         setBulkLoadingMessage('일괄 계산을 시작합니다...');
 
         workerRef.current.postMessage({
@@ -135,10 +138,21 @@ export default function useSimulator() {
         }
         exportToExcel(downloadableData[type], `${selectedGov}_${type}.xlsx`);
     };
+    
+    const downloadBulkDetailedData = (category) => {
+        if (!bulkDownloadableData || !bulkDownloadableData[category]) {
+            showNotification('다운로드할 데이터가 없습니다. 먼저 일괄 계산을 실행해주세요.', 'warning');
+            return;
+        }
+        const success = exportMultiSheetExcel(bulkDownloadableData[category], `${category}_전체.xlsx`);
+        if (!success) {
+            showNotification('선택한 항목에 대해 다운로드할 데이터가 없습니다.', 'info');
+        }
+    };
 
     return {
         state: { selectedGov, excludePrivate, files, scores, isLoading, loadingMessage, notification, downloadableData, isBulkLoading, bulkLoadingMessage, bulkResults },
         setters: { setSelectedGov, setExcludePrivate, setFile },
-        actions: { runSingleSimulation, runBulkSimulation, downloadDetailedData, clearNotification, showNotification }
+        actions: { runSingleSimulation, runBulkSimulation, downloadDetailedData, downloadBulkDetailedData, clearNotification, showNotification }
     };
 }
