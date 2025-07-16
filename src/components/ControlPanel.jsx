@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/components/ControlPanel.jsx
-// 역할: 좌측의 설정 및 파일 업로드 UI (로딩 메시지 표시 기능 추가)
+// 역할: 각 파일 업로드 컴포넌트에 툴팁으로 보여줄 설명 텍스트를 전달합니다.
 // =================================================================
 import React from 'react';
 import { LOCAL_GOV_LIST } from '../constants';
@@ -59,10 +59,34 @@ export default function ControlPanel({
             <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">📁 파일 업로드</h2>
                 <div className="space-y-4">
-                    <FileUpload id="planFile" label="실행계획 파일" file={files.planFile} onFileChange={(file) => onFileChange('planFile', file)} />
-                    <FileUpload id="noticeFile" label="고시문 파일" file={files.noticeFile} onFileChange={(file) => onFileChange('noticeFile', file)} />
-                    <FileUpload id="dbFile" label="실적DB 파일" file={files.dbFile} onFileChange={(file) => onFileChange('dbFile', file)} />
-                    <FileUpload id="ordinanceFile" label="조례 파일" file={files.ordinanceFile} onFileChange={(file) => onFileChange('ordinanceFile', file)} />
+                    <FileUpload 
+                        id="planFile" 
+                        label="실행계획 확정현황 파일" 
+                        file={files.planFile} 
+                        onFileChange={(file) => onFileChange('planFile', file)}
+                        tooltipText="기반시설관리시스템 공지사항에 있는 '실행계획 확정현황' 엑셀 파일을 업로드 해주세요."
+                    />
+                    <FileUpload 
+                        id="noticeFile" 
+                        label="최소유지관리기준 고시문 파일" 
+                        file={files.noticeFile} 
+                        onFileChange={(file) => onFileChange('noticeFile', file)}
+                        tooltipText="기반시설관리시스템 공지사항에 있는 '최소유지관리기준 고시문' 엑셀 파일을 업로드 해주세요"
+                    />
+                    <FileUpload 
+                        id="dbFile" 
+                        label="실적DB 파일" 
+                        file={files.dbFile} 
+                        onFileChange={(file) => onFileChange('dbFile', file)}
+                        tooltipText="기반시설관리시스템 통계현황-시설관리이력에서 다운로드한 실적 엑셀 파일을 업로드해주세요."
+                    />
+                    <FileUpload 
+                        id="ordinanceFile" 
+                        label="충당금 조례 제정 파일" 
+                        file={files.ordinanceFile} 
+                        onFileChange={(file) => onFileChange('ordinanceFile', file)}
+                        tooltipText="기반시설관리시스템 공지사항에 있는 '충당금 조례 제정' 엑셀 파일을 업로드 해주세요."
+                    />
                 </div>
             </div>
 
