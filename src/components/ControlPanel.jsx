@@ -1,12 +1,11 @@
 // =================================================================
 // FILE: src/components/ControlPanel.jsx
-// 역할: 좌측의 설정 및 파일 업로드 UI (애니메이션 추가됨)
+// 역할: 좌측의 설정 및 파일 업로드 UI
 // =================================================================
 import React from 'react';
 import { LOCAL_GOV_LIST } from '../constants';
 import FileUpload from './FileUpload';
 
-// 모든 카드에 일관된 호버 애니메이션 효과를 적용하기 위한 변수
 const cardHoverEffect = "transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl";
 
 export default function ControlPanel({
@@ -14,6 +13,7 @@ export default function ControlPanel({
     excludePrivate,
     files,
     isLoading,
+    loadingMessage,
     onGovChange,
     onExcludeChange,
     onFileChange,
@@ -21,7 +21,6 @@ export default function ControlPanel({
 }) {
     return (
         <div className="space-y-8">
-            {/* Settings Card */}
             <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">⚙️ 기본 설정</h2>
                 <div className="space-y-4">
@@ -57,7 +56,6 @@ export default function ControlPanel({
                 </div>
             </div>
 
-            {/* File Upload Card */}
             <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect}`}>
                 <h2 className="text-xl font-semibold mb-4 border-b pb-3 text-gray-800">📁 파일 업로드</h2>
                 <div className="space-y-4">
@@ -68,7 +66,6 @@ export default function ControlPanel({
                 </div>
             </div>
 
-            {/* Action Button */}
             <button
                 onClick={onRunSimulation}
                 disabled={isLoading}
@@ -82,7 +79,7 @@ export default function ControlPanel({
                 ) : (
                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 )}
-                <span>{isLoading ? '분석 중...' : '시뮬레이션 시작'}</span>
+                <span>{isLoading ? loadingMessage : '시뮬레이션 시작'}</span>
             </button>
         </div>
     );

@@ -1,12 +1,11 @@
 // =================================================================
 // FILE: src/components/Dashboard.jsx
-// 역할: 우측의 결과 대시보드 UI (다운로드 버튼 재배치 및 문구 수정)
+// 역할: 우측의 결과 대시보드 UI
 // =================================================================
 import React from 'react';
 
 const cardHoverEffect = "transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl";
 
-// 점수 카드 컴포넌트
 const ScoreCard = ({ title, score, maxScore, color, details, downloads = {}, onDownload }) => {
     const numericScore = Number(score) || 0;
     const numericMaxScore = Number(maxScore) || 0;
@@ -14,7 +13,6 @@ const ScoreCard = ({ title, score, maxScore, color, details, downloads = {}, onD
     
     return (
         <div className={`bg-white p-6 rounded-xl shadow-md ${cardHoverEffect} flex flex-col`}>
-            {/* 상단 컨텐츠 */}
             <div className="flex-grow">
                 <h3 className={`text-lg font-semibold text-gray-700`}>{title}</h3>
                 <div className="flex justify-between items-baseline mt-2">
@@ -33,8 +31,6 @@ const ScoreCard = ({ title, score, maxScore, color, details, downloads = {}, onD
                     ))}
                 </div>
             </div>
-
-            {/* 다운로드 버튼 섹션 (해당 데이터가 있을 경우에만 렌더링) */}
             {Object.keys(downloads).length > 0 && (
                  <div className="mt-4 pt-4 border-t border-gray-200">
                     <h4 className="text-sm font-semibold text-gray-600 mb-2">상세 데이터</h4>
@@ -51,7 +47,6 @@ const ScoreCard = ({ title, score, maxScore, color, details, downloads = {}, onD
     );
 };
 
-// 안내 배너 컴포넌트
 const InfoBanner = () => (
     <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-r-lg" role="alert">
         <div className="flex">
@@ -68,7 +63,6 @@ const InfoBanner = () => (
     </div>
 );
 
-// 메인 대시보드 컴포넌트
 export default function Dashboard({ scores, downloadableData, onDownload }) {
     const totalScore = (Number(scores.plan.score) + Number(scores.maintain.score) + Number(scores.ordinance.score)).toFixed(2);
     
@@ -78,7 +72,6 @@ export default function Dashboard({ scores, downloadableData, onDownload }) {
         ordinance: '#a855f7'
     };
 
-    // 각 지표별 다운로드 데이터를 분리
     const planDownloads = {
         '실행계획_미제출': downloadableData['실행계획_미제출']
     };

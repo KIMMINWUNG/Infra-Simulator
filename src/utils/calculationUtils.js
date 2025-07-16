@@ -6,6 +6,22 @@ import { readExcelToJson, readRawExcel } from './excelUtils';
 import { HEADER_PLAN, HEADER_DB, HEADER_ORDINANCE, GRADE_EXCLUDE, PRIVATE_OWNERS } from '../constants';
 import * as XLSX from 'xlsx';
 
+const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const processInChunks = async (array, processFn, chunkSize = 1000, setLoadingMessage, message) => {
+    let results = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        const chunk = array.slice(i, i + chunkSize);
+        const processedChunk = chunk.filter(processFn);
+        results = results.concat(processedChunk);
+        if (setLoadingMessage) {
+            setLoadingMessage(`${message} (${i + chunk.length}/${array.length})`);
+        }
+        await yieldToMain();
+    }
+    return results;
+};
+
 const calculatePlan = (sheet, gov, excludePrivate) => {
     const filtered = sheet.filter(r => r["관리계획 수립기관"]?.trim() === gov);
     const finalData = excludePrivate ? filtered.filter(r => !PRIVATE_OWNERS.includes(r["작성기관"]?.trim())) : filtered;
@@ -30,7 +46,10 @@ const calculatePlan = (sheet, gov, excludePrivate) => {
     };
 };
 
-const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
+const calculateMaintain = async (noticeWB, dbSheet, gov, excludePrivate, setLoadingMessage) => {
+    if (setLoadingMessage) setLoadingMessage('고시문 분석 중...');
+    await yieldToMain();
+
     const sheet = noticeWB.Sheets[gov];
     if (!sheet) throw new Error(`고시문 파일에 "${gov}" 시트가 없습니다.`);
 
@@ -42,7 +61,7 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
     const groupKeys = new Set(), gradeKeys = new Set();
     const groupCols = ["C", "D", "E", "F", "G"], gradeCols = ["H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"];
 
-    for (let i = 2; i < 300; i++) {
+    for (let i = 2; i < 500; i++) {
         const infra = sheet[`A${i}`]?.v?.trim(), fac = sheet[`B${i}`]?.v?.trim();
         if (!infra || !fac) continue;
         
@@ -57,10 +76,10 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate) => {
         processCols(gradeCols, gradeKeys);
     }
 
-    const included = dbBody.filter(r => groupKeys.has(`${r["기반시설구분"]}||${r["시설물종류"]}||${r["시설물종별"]}`));
+    const included = await processInChunks(dbBody, r => groupKeys.has(`${r["기반시설구분"]}||${r["시설물종류"]}||${r["시설물종별"]}`), 1000, setLoadingMessage, '관리그룹 필터링 중...');
     const excluded = dbBody.filter(r => !included.includes(r));
-    const validGrades = included.filter(r => !GRADE_EXCLUDE.includes(r["등급"]?.trim()));
-    const passed = validGrades.filter(r => gradeKeys.has(`${r["기반시설구분"]}||${r["시설물종류"]}||${r["등급"]}`));
+    const validGrades = await processInChunks(included, r => !GRADE_EXCLUDE.includes(r["등급"]?.trim()), 1000, setLoadingMessage, '등급 유효성 검사 중...');
+    const passed = await processInChunks(validGrades, r => gradeKeys.has(`${r["기반시설구분"]}||${r["시설물종류"]}||${r["등급"]}`), 1000, setLoadingMessage, '목표등급 만족여부 확인 중...');
     const failed = validGrades.filter(r => !passed.includes(r));
 
     const score = validGrades.length > 0 ? (passed.length / validGrades.length) * 20 : 0;
@@ -84,18 +103,20 @@ const calculateOrdinance = (sheet, gov) => {
     };
 };
 
-export const calculateScores = async (type, files, gov, excludePrivate) => {
+export const calculateScores = async (type, files, gov, excludePrivate, setLoadingMessage) => {
     switch (type) {
         case 'plan': {
+            if (setLoadingMessage) setLoadingMessage('실행계획 평가 중...');
             const sheet = await readExcelToJson(files.planFile, HEADER_PLAN);
             return calculatePlan(sheet, gov, excludePrivate);
         }
         case 'maintain': {
             const noticeWB = await readRawExcel(files.noticeFile);
             const dbSheet = await readExcelToJson(files.dbFile, HEADER_DB);
-            return calculateMaintain(noticeWB, dbSheet, gov, excludePrivate);
+            return await calculateMaintain(noticeWB, dbSheet, gov, excludePrivate, setLoadingMessage);
         }
         case 'ordinance': {
+            if (setLoadingMessage) setLoadingMessage('조례 제정 평가 중...');
             const sheet = await readExcelToJson(files.ordinanceFile, HEADER_ORDINANCE);
             return calculateOrdinance(sheet, gov);
         }

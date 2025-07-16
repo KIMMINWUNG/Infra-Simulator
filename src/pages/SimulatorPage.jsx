@@ -48,6 +48,7 @@ export default function SimulatorPage() {
                             excludePrivate={state.excludePrivate}
                             files={state.files}
                             isLoading={state.isLoading}
+                            loadingMessage={state.loadingMessage}
                             onGovChange={setters.setSelectedGov}
                             onExcludeChange={setters.setExcludePrivate}
                             onFileChange={setters.setFile}

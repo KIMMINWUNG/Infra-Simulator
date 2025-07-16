@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/hooks/useSimulator.js
-// 역할: 시뮬레이터의 모든 상태와 로직을 관리하는 커스텀 훅
+// 역할: 시뮬레이터의 모든 상태와 로직을 관리하는 커스텀 훅 (일괄 계산 로직 포함)
 // =================================================================
 import { useState } from 'react';
 import { calculateScores } from '../utils/calculationUtils';
@@ -26,6 +26,7 @@ export default function useSimulator() {
     const [files, setFiles] = useState(initialFiles);
     const [scores, setScores] = useState(initialScores);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
     const [notification, setNotification] = useState(null);
     const [downloadableData, setDownloadableData] = useState({});
     
@@ -53,12 +54,12 @@ export default function useSimulator() {
         }
 
         setIsLoading(true);
-        showNotification('점수 계산을 시작합니다...', 'info');
+        setLoadingMessage('점수 계산을 시작합니다...');
 
         try {
-            const plan = await calculateScores('plan', { planFile: files.planFile }, selectedGov, excludePrivate);
-            const maintain = await calculateScores('maintain', { noticeFile: files.noticeFile, dbFile: files.dbFile }, selectedGov, excludePrivate);
-            const ordinance = await calculateScores('ordinance', { ordinanceFile: files.ordinanceFile }, selectedGov, excludePrivate);
+            const plan = await calculateScores('plan', { planFile: files.planFile }, selectedGov, excludePrivate, setLoadingMessage);
+            const maintain = await calculateScores('maintain', { noticeFile: files.noticeFile, dbFile: files.dbFile }, selectedGov, excludePrivate, setLoadingMessage);
+            const ordinance = await calculateScores('ordinance', { ordinanceFile: files.ordinanceFile }, selectedGov, excludePrivate, setLoadingMessage);
 
             setScores({ plan, maintain, ordinance });
             setDownloadableData({ ...plan.downloadableData, ...maintain.downloadableData });
@@ -70,6 +71,7 @@ export default function useSimulator() {
             setScores(initialScores);
         } finally {
             setIsLoading(false);
+            setLoadingMessage('');
         }
     };
     
@@ -86,9 +88,9 @@ export default function useSimulator() {
         const results = [];
         for (const gov of LOCAL_GOV_LIST) {
             try {
-                const plan = await calculateScores('plan', { planFile: adminFiles.planFile }, gov, true);
-                const maintain = await calculateScores('maintain', { noticeFile: adminFiles.noticeFile, dbFile: adminFiles.dbFile }, gov, true);
-                const ordinance = await calculateScores('ordinance', { ordinanceFile: adminFiles.ordinanceFile }, gov, true);
+                const plan = await calculateScores('plan', { planFile: adminFiles.planFile }, gov, true, null);
+                const maintain = await calculateScores('maintain', { noticeFile: adminFiles.noticeFile, dbFile: adminFiles.dbFile }, gov, true, null);
+                const ordinance = await calculateScores('ordinance', { ordinanceFile: adminFiles.ordinanceFile }, gov, true, null);
                 
                 results.push({
                     지자체: gov,
@@ -116,7 +118,7 @@ export default function useSimulator() {
     };
 
     return {
-        state: { selectedGov, excludePrivate, files, scores, isLoading, notification, downloadableData, isBulkLoading, bulkResults },
+        state: { selectedGov, excludePrivate, files, scores, isLoading, loadingMessage, notification, downloadableData, isBulkLoading, bulkResults },
         setters: { setSelectedGov, setExcludePrivate, setFile },
         actions: { runSingleSimulation, runBulkSimulation, downloadDetailedData, clearNotification, showNotification }
     };
