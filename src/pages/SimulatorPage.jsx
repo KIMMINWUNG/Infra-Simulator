@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/pages/SimulatorPage.jsx
-// 역할: 시뮬레이터의 메인 페이지. 전체 레이아웃과 모달 상태를 관리합니다.
+// 역할: 시뮬레이터의 메인 페이지. (로딩 메시지 전달하도록 수정)
 // =================================================================
 import React, { useState } from 'react';
 import ControlPanel from '../components/ControlPanel';
@@ -8,7 +8,7 @@ import Dashboard from '../components/Dashboard';
 import AdminPanel from '../components/AdminPanel';
 import AdminLoginModal from '../components/AdminLoginModal';
 import Notification from '../components/Notification';
-import Footer from '../components/Footer'; // Footer 컴포넌트 추가
+import Footer from '../components/Footer';
 import useSimulator from '../hooks/useSimulator';
 
 export default function SimulatorPage() {

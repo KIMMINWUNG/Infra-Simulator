@@ -1,11 +1,10 @@
 // =================================================================
 // FILE: src/hooks/useSimulator.js
-// 역할: 시뮬레이터의 모든 상태와 로직을 관리하는 커스텀 훅
+// 역할: 시뮬레이터의 모든 상태와 로직을 관리 (Web Worker와 통신하도록 수정)
 // =================================================================
-import { useState } from 'react';
-import { calculateScores } from '../utils/calculationUtils';
+import { useState, useEffect, useRef } from 'react';
 import { exportToExcel } from '../utils/excelUtils';
-import { LOCAL_GOV_LIST } from '../constants';
+import * as constants from '../constants';
 
 const initialScores = {
     plan: { score: 0, details: {} },
@@ -32,6 +31,33 @@ export default function useSimulator() {
     
     const [isBulkLoading, setIsBulkLoading] = useState(false);
     const [bulkResults, setBulkResults] = useState([]);
+    
+    const workerRef = useRef(null);
+
+    useEffect(() => {
+        workerRef.current = new Worker('/calculation.worker.js');
+
+        workerRef.current.onmessage = (e) => {
+            const { type, message, results } = e.data;
+            if (type === 'progress') {
+                setLoadingMessage(message);
+            } else if (type === 'done') {
+                setScores(results);
+                setDownloadableData({ ...results.plan.downloadableData, ...results.maintain.downloadableData });
+                showNotification('점수 계산이 완료되었습니다!', 'success');
+                setIsLoading(false);
+                setLoadingMessage('');
+            } else if (type === 'error') {
+                showNotification(`계산 중 오류 발생: ${message}`, 'error');
+                setIsLoading(false);
+                setLoadingMessage('');
+            }
+        };
+
+        return () => {
+            workerRef.current.terminate();
+        };
+    }, []);
 
     const setFile = (type, file) => {
         setFiles(prev => ({ ...prev, [type]: file }));
@@ -54,59 +80,19 @@ export default function useSimulator() {
         }
 
         setIsLoading(true);
-        setLoadingMessage('점수 계산을 시작합니다...');
-
-        try {
-            const plan = await calculateScores('plan', { planFile: files.planFile }, selectedGov, excludePrivate, setLoadingMessage);
-            const maintain = await calculateScores('maintain', { noticeFile: files.noticeFile, dbFile: files.dbFile }, selectedGov, excludePrivate, setLoadingMessage);
-            const ordinance = await calculateScores('ordinance', { ordinanceFile: files.ordinanceFile }, selectedGov, excludePrivate, setLoadingMessage);
-
-            setScores({ plan, maintain, ordinance });
-            setDownloadableData({ ...plan.downloadableData, ...maintain.downloadableData });
-            
-            showNotification('점수 계산이 완료되었습니다!', 'success');
-        } catch (error) {
-            console.error("Calculation Error:", error);
-            showNotification(`오류 발생: ${error.message}`, 'error');
-            setScores(initialScores);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('');
-        }
+        setScores(initialScores);
+        setLoadingMessage('계산을 준비 중입니다...');
+        
+        workerRef.current.postMessage({
+            files,
+            gov: selectedGov,
+            excludePrivate,
+            constants
+        });
     };
     
     const runBulkSimulation = async (adminFiles) => {
-        if (!adminFiles.planFile || !adminFiles.noticeFile || !adminFiles.dbFile || !adminFiles.ordinanceFile) {
-            showNotification('관리자 모드는 모든 파일을 업로드해야 합니다.', 'error');
-            return;
-        }
-        
-        setIsBulkLoading(true);
-        setBulkResults([]);
-        showNotification('전체 지자체 점수 일괄 계산을 시작합니다. (시간 소요)', 'info');
-        
-        const results = [];
-        for (const gov of LOCAL_GOV_LIST) {
-            try {
-                const plan = await calculateScores('plan', { planFile: adminFiles.planFile }, gov, true, null);
-                const maintain = await calculateScores('maintain', { noticeFile: adminFiles.noticeFile, dbFile: adminFiles.dbFile }, gov, true, null);
-                const ordinance = await calculateScores('ordinance', { ordinanceFile: adminFiles.ordinanceFile }, gov, true, null);
-                
-                results.push({
-                    지자체: gov,
-                    실행계획: plan.score.toFixed(2),
-                    유지관리기준: maintain.score.toFixed(2),
-                    조례제정: ordinance.score.toFixed(2),
-                    총점: (Number(plan.score) + Number(maintain.score) + Number(ordinance.score)).toFixed(2)
-                });
-                setBulkResults([...results]);
-            } catch (error) {
-                console.warn(`[${gov}] 점수 계산 실패: ${error.message}`);
-            }
-        }
-        
-        showNotification('일괄 계산이 완료되었습니다.', 'success');
-        setIsBulkLoading(false);
+       showNotification('일괄 계산 기능은 현재 개발 중입니다.', 'warning');
     };
 
     const downloadDetailedData = (type) => {
