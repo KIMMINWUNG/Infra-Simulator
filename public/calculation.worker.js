@@ -1,9 +1,7 @@
 // =================================================================
-// FILE: public/calculation.worker.js (새로운 파일!)
-// 역할: 모든 무거운 계산을 백그라운드에서 전담하는 '보조 일꾼'입니다.
-// public 폴더에 이 파일을 새로 만들어주세요.
+// FILE: public/calculation.worker.js
+// 역할: 모든 무거운 계산을 백그라운드에서 전담 (일괄 계산 로직 추가)
 // =================================================================
-// self.importScripts(...)를 사용하여 필요한 라이브러리를 워커 스코프로 가져옵니다.
 self.importScripts('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
 
 // --- 유틸리티 함수들 (워커 내에서 사용) ---
@@ -130,41 +128,82 @@ const calculateOrdinance = (sheet, gov) => {
     };
 };
 
-
 // --- 메인 이벤트 리스너 ---
 self.onmessage = async (e) => {
-    const { files, gov, excludePrivate, constants } = e.data;
+    const { task, files, gov, excludePrivate, constants } = e.data;
     
-    try {
-        self.postMessage({ type: 'progress', message: '실행계획 파일 읽는 중...' });
-        const planSheet = await readExcelToJson(files.planFile, constants.HEADER_PLAN);
-        const planResult = calculatePlan(planSheet, gov, excludePrivate, constants);
-        self.postMessage({ type: 'progress', message: '실행계획 평가 완료.' });
-        await yieldToMain();
+    // 단일 시뮬레이션 작업
+    if (task === 'single') {
+        try {
+            self.postMessage({ type: 'progress', message: '실행계획 파일 읽는 중...' });
+            const planSheet = await readExcelToJson(files.planFile, constants.HEADER_PLAN);
+            const planResult = calculatePlan(planSheet, gov, excludePrivate, constants);
+            self.postMessage({ type: 'progress', message: '실행계획 평가 완료.' });
+            await yieldToMain();
 
-        self.postMessage({ type: 'progress', message: '고시문 파일 읽는 중...' });
-        const noticeWB = await readRawExcel(files.noticeFile);
-        self.postMessage({ type: 'progress', message: '실적DB 파일 읽는 중... (시간 소요)' });
-        const dbSheet = await readExcelToJson(files.dbFile, constants.HEADER_DB);
-        const maintainResult = calculateMaintain(noticeWB, dbSheet, gov, excludePrivate, constants);
-        self.postMessage({ type: 'progress', message: '유지관리기준 평가 완료.' });
-        await yieldToMain();
-        
-        self.postMessage({ type: 'progress', message: '조례 파일 읽는 중...' });
-        const ordinanceSheet = await readExcelToJson(files.ordinanceFile, constants.HEADER_ORDINANCE);
-        const ordinanceResult = calculateOrdinance(ordinanceSheet, gov);
-        self.postMessage({ type: 'progress', message: '조례 제정 평가 완료.' });
+            self.postMessage({ type: 'progress', message: '고시문 파일 읽는 중...' });
+            const noticeWB = await readRawExcel(files.noticeFile);
+            self.postMessage({ type: 'progress', message: '실적DB 파일 읽는 중... (시간 소요)' });
+            const dbSheet = await readExcelToJson(files.dbFile, constants.HEADER_DB);
+            const maintainResult = calculateMaintain(noticeWB, dbSheet, gov, excludePrivate, constants);
+            self.postMessage({ type: 'progress', message: '유지관리기준 평가 완료.' });
+            await yieldToMain();
+            
+            self.postMessage({ type: 'progress', message: '조례 파일 읽는 중...' });
+            const ordinanceSheet = await readExcelToJson(files.ordinanceFile, constants.HEADER_ORDINANCE);
+            const ordinanceResult = calculateOrdinance(ordinanceSheet, gov);
+            self.postMessage({ type: 'progress', message: '조례 제정 평가 완료.' });
 
-        self.postMessage({ 
-            type: 'done', 
-            results: {
-                plan: planResult,
-                maintain: maintainResult,
-                ordinance: ordinanceResult
+            self.postMessage({ 
+                type: 'done', 
+                results: {
+                    plan: planResult,
+                    maintain: maintainResult,
+                    ordinance: ordinanceResult
+                }
+            });
+
+        } catch (error) {
+            self.postMessage({ type: 'error', message: error.message });
+        }
+    }
+    
+    // 일괄 계산 작업
+    if (task === 'bulk') {
+        try {
+            self.postMessage({ type: 'bulk_progress', message: '일괄 계산용 파일 읽는 중...' });
+            const planSheet = await readExcelToJson(files.planFile, constants.HEADER_PLAN);
+            const noticeWB = await readRawExcel(files.noticeFile);
+            const dbSheet = await readExcelToJson(files.dbFile, constants.HEADER_DB);
+            const ordinanceSheet = await readExcelToJson(files.ordinanceFile, constants.HEADER_ORDINANCE);
+            
+            for (let i = 0; i < constants.LOCAL_GOV_LIST.length; i++) {
+                const currentGov = constants.LOCAL_GOV_LIST[i];
+                self.postMessage({ type: 'bulk_progress', message: `[${i+1}/${constants.LOCAL_GOV_LIST.length}] ${currentGov} 계산 중...` });
+                await yieldToMain();
+
+                try {
+                    const planResult = calculatePlan(planSheet, currentGov, true, constants);
+                    const maintainResult = calculateMaintain(noticeWB, dbSheet, currentGov, true, constants);
+                    const ordinanceResult = calculateOrdinance(ordinanceSheet, currentGov);
+                    
+                    const newResult = {
+                        지자체: currentGov,
+                        실행계획: planResult.score.toFixed(2),
+                        유지관리기준: maintainResult.score.toFixed(2),
+                        조례제정: ordinanceResult.score.toFixed(2),
+                        총점: (planResult.score + maintainResult.score + ordinanceResult.score).toFixed(2)
+                    };
+                    self.postMessage({ type: 'bulk_result_partial', result: newResult });
+
+                } catch (govError) {
+                     console.warn(`[${currentGov}] 점수 계산 실패: ${govError.message}`);
+                }
             }
-        });
+            self.postMessage({ type: 'bulk_done' });
 
-    } catch (error) {
-        self.postMessage({ type: 'error', message: error.message });
+        } catch (error) {
+            self.postMessage({ type: 'error', message: error.message });
+        }
     }
 };

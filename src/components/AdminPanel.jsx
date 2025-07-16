@@ -1,12 +1,12 @@
 // =================================================================
 // FILE: src/components/AdminPanel.jsx
-// 역할: 관리자 모드용 패널 (모달 형태)
+// 역할: 관리자 모드용 패널 (일괄 계산 진행 메시지 추가)
 // =================================================================
 import React, { useState } from 'react';
 import FileUpload from './FileUpload';
 import { exportToExcel } from '../utils/excelUtils';
 
-export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkLoading }) {
+export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkLoading, bulkLoadingMessage }) {
     const [adminFiles, setAdminFiles] = useState({
         planFile: null,
         noticeFile: null,
@@ -41,7 +41,10 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
                             <FileUpload id="admin-ord" label="조례 파일" file={adminFiles.ordinanceFile} onFileChange={(f) => handleFileChange('ordinanceFile', f)} />
                         </div>
                         <div className="flex flex-col">
-                             <h3 className="font-semibold mb-4">일괄 계산 결과</h3>
+                             <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-semibold">일괄 계산 결과</h3>
+                                {isBulkLoading && <span className="text-sm text-blue-600 font-semibold">{bulkLoadingMessage}</span>}
+                             </div>
                              <div className="border rounded-lg flex-grow overflow-y-auto">
                                 <table className="w-full text-sm text-left">
                                     <thead className="bg-gray-50 sticky top-0">
@@ -50,7 +53,7 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
                                             <th>실행계획</th>
                                             <th>유지관리</th>
                                             <th>조례</th>
-                                            <th>총점</th>
+                                            <th className="font-bold">총점</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -63,7 +66,7 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
                                                 <td className="font-bold">{res.총점}</td>
                                             </tr>
                                         ))}
-                                        {isBulkLoading && !bulkResults.length && <tr><td colSpan="5" className="text-center p-4">계산 중...</td></tr>}
+                                        {isBulkLoading && !bulkResults.length && <tr><td colSpan="5" className="text-center p-4">{bulkLoadingMessage}</td></tr>}
                                     </tbody>
                                 </table>
                              </div>
@@ -75,7 +78,7 @@ export default function AdminPanel({ onClose, onRunBulkSim, bulkResults, isBulkL
                     <button onClick={() => onRunBulkSim(adminFiles)} disabled={isBulkLoading} className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
                         {isBulkLoading ? '계산 중...' : '일괄 계산 시작'}
                     </button>
-                    <button onClick={handleExport} disabled={bulkResults.length === 0} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400">
+                    <button onClick={handleExport} disabled={bulkResults.length === 0 || isBulkLoading} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400">
                         결과 엑셀 다운로드
                     </button>
                 </footer>

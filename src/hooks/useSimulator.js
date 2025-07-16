@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: src/hooks/useSimulator.js
-// 역할: 시뮬레이터의 모든 상태와 로직을 관리 (Web Worker와 통신하도록 수정)
+// 역할: 시뮬레이터의 모든 상태와 로직을 관리 (일괄 계산 로직 구현)
 // =================================================================
 import { useState, useEffect, useRef } from 'react';
 import { exportToExcel } from '../utils/excelUtils';
@@ -30,6 +30,7 @@ export default function useSimulator() {
     const [downloadableData, setDownloadableData] = useState({});
     
     const [isBulkLoading, setIsBulkLoading] = useState(false);
+    const [bulkLoadingMessage, setBulkLoadingMessage] = useState('');
     const [bulkResults, setBulkResults] = useState([]);
     
     const workerRef = useRef(null);
@@ -38,19 +39,37 @@ export default function useSimulator() {
         workerRef.current = new Worker('/calculation.worker.js');
 
         workerRef.current.onmessage = (e) => {
-            const { type, message, results } = e.data;
-            if (type === 'progress') {
-                setLoadingMessage(message);
-            } else if (type === 'done') {
-                setScores(results);
-                setDownloadableData({ ...results.plan.downloadableData, ...results.maintain.downloadableData });
-                showNotification('점수 계산이 완료되었습니다!', 'success');
-                setIsLoading(false);
-                setLoadingMessage('');
-            } else if (type === 'error') {
-                showNotification(`계산 중 오류 발생: ${message}`, 'error');
-                setIsLoading(false);
-                setLoadingMessage('');
+            const { type, message, results, result } = e.data;
+            switch (type) {
+                case 'progress':
+                    setLoadingMessage(message);
+                    break;
+                case 'done':
+                    setScores(results);
+                    setDownloadableData({ ...results.plan.downloadableData, ...results.maintain.downloadableData });
+                    showNotification('점수 계산이 완료되었습니다!', 'success');
+                    setIsLoading(false);
+                    setLoadingMessage('');
+                    break;
+                case 'bulk_progress':
+                    setBulkLoadingMessage(message);
+                    break;
+                case 'bulk_result_partial':
+                    setBulkResults(prev => [...prev, result]);
+                    break;
+                case 'bulk_done':
+                    setBulkLoadingMessage('일괄 계산 완료!');
+                    setIsBulkLoading(false);
+                    break;
+                case 'error':
+                    showNotification(`계산 중 오류 발생: ${message}`, 'error');
+                    setIsLoading(false);
+                    setLoadingMessage('');
+                    setIsBulkLoading(false);
+                    setBulkLoadingMessage('');
+                    break;
+                default:
+                    break;
             }
         };
 
@@ -84,6 +103,7 @@ export default function useSimulator() {
         setLoadingMessage('계산을 준비 중입니다...');
         
         workerRef.current.postMessage({
+            task: 'single',
             files,
             gov: selectedGov,
             excludePrivate,
@@ -92,7 +112,20 @@ export default function useSimulator() {
     };
     
     const runBulkSimulation = async (adminFiles) => {
-       showNotification('일괄 계산 기능은 현재 개발 중입니다.', 'warning');
+        if (!adminFiles.planFile || !adminFiles.noticeFile || !adminFiles.dbFile || !adminFiles.ordinanceFile) {
+            showNotification('관리자 모드는 모든 파일을 업로드해야 합니다.', 'error');
+            return;
+        }
+        
+        setIsBulkLoading(true);
+        setBulkResults([]);
+        setBulkLoadingMessage('일괄 계산을 시작합니다...');
+
+        workerRef.current.postMessage({
+            task: 'bulk',
+            files: adminFiles,
+            constants
+        });
     };
 
     const downloadDetailedData = (type) => {
@@ -104,7 +137,7 @@ export default function useSimulator() {
     };
 
     return {
-        state: { selectedGov, excludePrivate, files, scores, isLoading, loadingMessage, notification, downloadableData, isBulkLoading, bulkResults },
+        state: { selectedGov, excludePrivate, files, scores, isLoading, loadingMessage, notification, downloadableData, isBulkLoading, bulkLoadingMessage, bulkResults },
         setters: { setSelectedGov, setExcludePrivate, setFile },
         actions: { runSingleSimulation, runBulkSimulation, downloadDetailedData, clearNotification, showNotification }
     };
