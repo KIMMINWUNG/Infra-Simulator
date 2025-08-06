@@ -1,6 +1,6 @@
 // =================================================================
 // FILE: public/calculation.worker.js
-// 역할: 모든 무거운 계산을 백그라운드에서 전담 (일괄 계산 상세 데이터 수집 로직 추가)
+// 역할: 모든 무거운 계산을 백그라운드에서 전담 (고시문 파일 읽기 로직 개선)
 // =================================================================
 self.importScripts('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
 
@@ -88,18 +88,35 @@ const calculateMaintain = (noticeWB, dbSheet, gov, excludePrivate, constants) =>
     const groupKeys = new Set(), gradeKeys = new Set();
     const groupCols = ["C", "D", "E", "F", "G"], gradeCols = ["H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"];
 
-    for (let i = 2; i < 500; i++) {
-        const infra = sheet[`A${i}`]?.v?.trim(), fac = sheet[`B${i}`]?.v?.trim();
+    // --- ✨ 수정된 부분 시작 ---
+    // 엑셀 시트의 실제 데이터 범위를 동적으로 파악합니다.
+    const range = self.XLSX.utils.decode_range(sheet['!ref']);
+    const endRow = range.e.r; // 데이터가 있는 마지막 행 번호를 가져옵니다.
+
+    // 고정된 500행 대신, 실제 데이터가 있는 마지막 행까지만 반복합니다.
+    for (let i = 2; i <= endRow + 1; i++) { 
+        const infraCell = sheet[`A${i}`];
+        const facCell = sheet[`B${i}`];
+
+        // 셀이나 셀의 값(v)이 없는 경우를 안전하게 처리합니다.
+        const infra = infraCell?.v ? String(infraCell.v).trim() : null;
+        const fac = facCell?.v ? String(facCell.v).trim() : null;
+        
         if (!infra || !fac) continue;
         
         const processCols = (cols, keySet) => {
             for (const col of cols) {
-                if (sheet[`${col}${i}`]?.v === "O") keySet.add(`${infra}||${fac}||${sheet[`${col}1`]?.v?.trim()}`);
+                const cell = sheet[`${col}${i}`];
+                const headerCell = sheet[`${col}1`];
+                if (cell?.v === "O" && headerCell?.v) {
+                    keySet.add(`${infra}||${fac}||${String(headerCell.v).trim()}`);
+                }
             }
         };
         processCols(groupCols, groupKeys);
         processCols(gradeCols, gradeKeys);
     }
+    // --- ✨ 수정된 부분 끝 ---
 
     const included = dbBody.filter(r => groupKeys.has(`${r["기반시설구분"]}||${r["시설물종류"]}||${r["시설물종별"]}`));
     const excluded = dbBody.filter(r => !included.includes(r));
